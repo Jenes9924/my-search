@@ -30,6 +30,7 @@ type skipListNode struct {
 type index struct {
 }
 
+// Add insert
 func (sl *SkipList) Add(data int) bool {
 
 	//node := sl.Find(data)
@@ -38,7 +39,6 @@ func (sl *SkipList) Add(data int) bool {
 		sl.size++
 	}
 	return err == nil
-
 }
 
 func (sl *SkipList) randomLevel() int {
@@ -165,4 +165,9 @@ func (sl *SkipList) search(data int, node *skipListNode, level int) *skipListNod
 	} else {
 		return node
 	}
+}
+
+func (sl *SkipList) Remove(data int) bool {
+
+	return false
 }

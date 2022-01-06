@@ -1,6 +1,6 @@
 package model
 
-import "github.com/pkg/errors"
+import "errors"
 
 type List struct {
 	Head *listNode
@@ -36,8 +36,16 @@ func (l *List) Add(v interface{}) {
 }
 
 func (l *List) Get(index int) (v interface{}, err error) {
-	if l.size < (index + 1) {
+	if l.size <= index {
 		return nil, errors.New("数组下标越界")
 	}
+	var res *listNode = l.Head
+	for i := 1; i < index; i++ {
+		res = res.Next
+	}
+	return res.Value, nil
+}
 
+func (l *List) Size() int {
+	return l.size
 }
