@@ -22,8 +22,9 @@ func NewSkipList(indexCount int) *SkipList {
 
 // 跳表节点
 type skipListNode struct {
-	Data int
-	Next []*skipListNode
+	Data     int
+	Next     []*skipListNode
+	Previous []*skipListNode
 }
 
 // 索引
@@ -110,7 +111,7 @@ func (sl *SkipList) Find(data int) *skipListNode {
 	return n
 }
 
-func (sl SkipList) get(data int) *skipListNode {
+func (sl SkipList) get(data int, isPrevious bool) *skipListNode {
 	var (
 		ix = sl.level - 1
 		n  = sl.Head[ix]
@@ -168,6 +169,11 @@ func (sl *SkipList) search(data int, node *skipListNode, level int) *skipListNod
 }
 
 func (sl *SkipList) Remove(data int) bool {
+
+	node := sl.get(data)
+	if node.Data != data {
+		return true
+	}
 
 	return false
 }
