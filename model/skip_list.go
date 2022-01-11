@@ -38,7 +38,7 @@ func (sl *SkipList) Add(data int) bool {
 	err := sl.add(data)
 	if err == nil {
 		sl.size++
-		fmt.Printf("add data is %d \n", data)
+		//fmt.Printf("add data is %d \n", data)
 	}
 	return err == nil
 }
