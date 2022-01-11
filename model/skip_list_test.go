@@ -20,7 +20,7 @@ func TestSkipList(t *testing.T) {
 	for _, v := range randomNumberArray {
 		skl.Add(v)
 		count++
-		if count%4000 == 0 {
+		if count%400000 == 0 {
 			n := time.Now()
 			fmt.Printf("add %d number, spend time is : %9fS \n", count, n.Sub(st).Seconds())
 			st = n
@@ -30,7 +30,11 @@ func TestSkipList(t *testing.T) {
 	for _, v := range randomNumberArray {
 		t := time.Now()
 		n := skl.Find(v)
-		fmt.Printf(" find data time is : %fS , result is %t \n", time.Now().Sub(t).Seconds(), v == n.Data)
+		equals := v == n.Data
+		fmt.Printf(" find data time is : %fS , result is %t \n", time.Now().Sub(t).Seconds(), equals)
+		if !equals {
+			fmt.Printf("")
+		}
 	}
 	fmt.Println("end")
 }
@@ -74,4 +78,16 @@ func TestRandomLevel(t *testing.T) {
 		var f float64 = float64(v) / float64(ts)
 		fmt.Printf(" %d The number of occurrences : %9f \n ", k, f)
 	}
+}
+
+func TestSlice(t *testing.T) {
+	var k, res, high = 4, 0, 16
+	for i := 0; i < high; i++ {
+		r := 1
+		for j := 0; j < i; j++ {
+			r = r * k
+		}
+		res = res + r
+	}
+	fmt.Println(5726623061 - res)
 }

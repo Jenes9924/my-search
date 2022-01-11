@@ -27,10 +27,6 @@ type skipListNode struct {
 	//Previous *skipListNode
 }
 
-// 索引
-type index struct {
-}
-
 // Add insert
 func (sl *SkipList) Add(data int) bool {
 
@@ -60,13 +56,16 @@ func (sl *SkipList) randomLevel() int {
 	//}
 	return level
 }
+func (sl *SkipList) getNewNode(data int) *skipListNode {
+	return &skipListNode{
+		Data: data,
+		Next: make([]*skipListNode, sl.maxLevel, sl.maxLevel),
+	}
+}
 
 func (sl *SkipList) add(data int) error {
 	if sl.Head == nil {
-		sl.Head = &skipListNode{
-			Data: data,
-			Next: []*skipListNode{},
-		}
+		sl.Head = sl.getNewNode(data)
 		sl.level = 1
 		return nil
 	}
@@ -77,7 +76,7 @@ func (sl *SkipList) add(data int) error {
 	//随机决定层级
 	level := sl.randomLevel()
 	// 构建新增node
-	insertNode := &skipListNode{Data: data, Next: []*skipListNode{}}
+	insertNode := sl.getNewNode(data)
 	// 全部承接前面节点
 	isFirst := false
 	if n.Data > data {
@@ -88,17 +87,12 @@ func (sl *SkipList) add(data int) error {
 	}
 	var (
 		idx = level - 1
-		//t = sl.Head[idx]
-		t = sl.Head
+		t   = sl.Head
 	)
-	tx := len(t.Next)
-	for tidx := level; tidx > tx; tidx-- {
-		t.Next = append(t.Next, nil)
-	}
-	sl.level = level
+	//sl.level = level
 	if isFirst {
 		for i := 0; i < level; i++ {
-			insertNode.Next = append(insertNode.Next, t)
+			insertNode.Next[i] = t
 		}
 		sl.Head = insertNode
 	} else {
@@ -107,18 +101,10 @@ func (sl *SkipList) add(data int) error {
 			if t == nil {
 				fmt.Printf("")
 			}
-			node := sl.search(data, t, idx)
-			if len(node.Next) <= idx {
-				node.Next = append(node.Next, insertNode)
-			} else {
-				insertNode.Next = append(insertNode.Next, node.Next[idx])
-				node.Next[idx] = insertNode
-			}
-
-			t = node
-			//}
+			t = sl.search(data, t, idx)
+			insertNode.Next[idx] = t.Next[idx]
+			t.Next[idx] = insertNode
 		}
-		insertNode.Next = sl.reverse(insertNode.Next)
 	}
 	if sl.level < level {
 		sl.level = level
@@ -145,16 +131,11 @@ func (sl SkipList) getByLevel(data, level int) *skipListNode {
 	)
 	for ; ix >= (level - 1); ix-- {
 		node := sl.search(data, n, ix)
-		if len(node.Next) <= ix || node.Next[ix] == nil {
-			n = node
-		} else if node.Next[ix].Data == data {
+		if node.Next[ix] != nil && node.Next[ix].Data == data {
 			n = node.Next[ix]
-		} else {
-			n = node
-		}
-		if n.Data == data {
 			break
 		}
+		n = node
 	}
 	return n
 }
@@ -162,31 +143,11 @@ func (sl SkipList) get(data int) *skipListNode {
 	return sl.getByLevel(data, 1)
 }
 
-//func (sl *SkipList) searchBy(data, level int, node *skipListNode) *skipListNode {
-//	if level < 1 {
-//		return nil
-//	}
-//	n := node
-//	for ; level >= 0; level-- {
-//		node := sl.search(data, n, level)
-//		if node == nil {
-//			n = node
-//			break
-//		} else {
-//			n = node.Next[level]
-//		}
-//		if n.Data == data {
-//			break
-//		}
-//	}
-//	return n
-//}
-
 /**
 同一层级搜索
 */
 func (sl *SkipList) search(data int, node *skipListNode, level int) *skipListNode {
-	if node.Data == data || len(node.Next) <= level || node.Next[level] == nil {
+	if node.Data == data || node.Next[level] == nil {
 		return node
 	}
 	if node.Next[level].Data < data {
@@ -215,16 +176,4 @@ func (sl *SkipList) Remove(data int) bool {
 		n = node
 	}
 	return true
-}
-
-func (sl *SkipList) reverse(ns []*skipListNode) []*skipListNode {
-	if len(ns) == 1 {
-		return ns
-	}
-	var t []*skipListNode
-	for ix := len(ns) - 1; ix >= 0; ix-- {
-		t = append(t, ns[ix])
-	}
-	ns = t
-	return t
 }
