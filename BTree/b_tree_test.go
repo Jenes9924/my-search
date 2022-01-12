@@ -20,3 +20,8 @@ func TestSliceMake(t *testing.T) {
 	n[0] = &d
 	fmt.Printf("%v , %v", k, p)
 }
+
+func TestDivision(t *testing.T) {
+	var d = 11/2 + 1
+	fmt.Printf("%v", d)
+}

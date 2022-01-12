@@ -1,29 +1,24 @@
 package BTree
 
-type IndexNodeList struct {
+type IndexNode struct {
 	// 索引
-	index []*Integer
+	Idxs []*DataNode
 	// 下层索引
-	nextLevel []*IndexNodeList
+	NextLevel []*IndexNode
+	Father    *IndexNode
+	Depth     int
 }
 
-func (i *IndexNodeList) IsNil() bool {
-	return i.index == nil || i.index[0] == nil
-}
-
-func (i *IndexNodeList) Data() *interface{} {
-	return nil
-}
-
-func (i *IndexNodeList) Type() int {
-	return 1
-}
-
-func (i *IndexNodeList) Index() []*Integer {
-	return i.index
+func (b *BTree) newIndexNode(idxs []*DataNode, nextLevel []*IndexNode) *IndexNode {
+	return &IndexNode{Idxs: idxs, NextLevel: nextLevel}
 }
 
 type DataNode struct {
-	index int
-	data  *interface{}
+	Idx  int
+	Data *interface{}
+	Next *DataNode
+}
+
+func (b *BTree) newDataNode(idx int, data *interface{}) *DataNode {
+	return &DataNode{Idx: idx, Data: data}
 }
