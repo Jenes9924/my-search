@@ -1,4 +1,4 @@
-package model
+package skip_list
 
 import (
 	"errors"
@@ -50,10 +50,10 @@ func (sl *SkipList) randomLevel() int {
 			break
 		}
 	}
-	//t := sl.level + 1
-	//if level > t{
-	//	level = t
-	//}
+	t := sl.level + 1
+	if level > t {
+		level = t
+	}
 	return level
 }
 func (sl *SkipList) getNewNode(data int) *skipListNode {

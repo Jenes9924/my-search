@@ -1,4 +1,4 @@
-package model
+package skip_list
 
 import (
 	"fmt"
@@ -68,6 +68,7 @@ func TestRandomLevel(t *testing.T) {
 	ts := 300000000
 	for i := 0; i < ts; i++ {
 		k := skl.randomLevel()
+		skl.level = k
 		if v, ok := m[k]; ok {
 			m[k] = v + 1
 		} else {
