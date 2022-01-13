@@ -13,13 +13,16 @@ type Node interface {
 	Type() int
 	Index() []*Integer
 	Next() []Node
-	Data() *interface{}
+	Data() interface{}
 	IsNil() bool
 }
 
 type Integer = int
 
 func NewBPlusTree(length int) *BTree {
+	if length < 3 {
+		length = 3
+	}
 	return &BTree{
 		depth:  0,
 		root:   nil,
@@ -28,33 +31,34 @@ func NewBPlusTree(length int) *BTree {
 }
 
 // todo 插入数据需要计算高度
-func (b *BTree) Insert(data *interface{}) {
-	datanode := b.newDataNode(b.maxIndex+1, data)
+func (b *BTree) Insert(data interface{}) int {
+	idx := b.maxIndex + 1
+	datanode := b.newDataNode(idx, data)
 	ixs, ix := b.search(datanode.Idx, 0, b.root)
 	b.insert(datanode, ixs, ix)
-
+	b.maxIndex = idx
+	return idx
 }
 
 func (b *BTree) insert(node *DataNode, ixs *IndexNode, ix int) {
 	if ixs == nil {
 		b.root = b.NewIndexNode(nil, 1)
-		b.root.Idxs = append(b.root.Idxs, node)
+		b.root.Idxs[0] = node
 		b.depth++
 		return
 	}
 	// 插入 node，然后重建索引
 	ixs.Idxs[ix+1] = node
 	b.rebuildIndex(ixs)
-
 }
 
 func (b *BTree) riseNode(node *DataNode, father *IndexNode, t1, t2 *IndexNode) {
-	ix := 0
+	ix := -1
 	if father == nil {
 		b.root = b.NewIndexNode(nil, 1)
-		b.root.Idxs = append(b.root.Idxs, node)
-		b.root.NextLevel[ix] = t1
-		b.root.NextLevel[ix+1] = t2
+		b.root.Idxs[0] = node
+		b.root.NextLevel[0] = t1
+		b.root.NextLevel[1] = t2
 		b.depth++
 		return
 	}
@@ -66,12 +70,13 @@ func (b *BTree) riseNode(node *DataNode, father *IndexNode, t1, t2 *IndexNode) {
 		}
 	}
 	// 中间插入 node，然后重建索引
-	it, it2 := tmp[0:ix+1], tmp[ix+1:len(tmp)]
-	t := append(it, node)
-	t = append(t, it2...)
-	copy(tmp[ix+2:], tmp[ix+1:])
+	if ix < (b.length - 2) {
+		copy(tmp[ix+2:], tmp[ix+1:])
+		copy(father.NextLevel[ix+3:], father.NextLevel[ix+2:])
+	}
 	tmp[ix+1] = node
 	// 中间插入 分裂的 t2
+	father.NextLevel[ix+2] = t2
 
 	b.rebuildIndex(father)
 
@@ -91,15 +96,26 @@ func (b *BTree) rebuildIndex(ixs *IndexNode) {
 	dn := ixs.Idxs[interceptIx]
 
 	// 当前 indexNode 分裂 以及 是否需要 删除
-	t1 := b.newIndexNode(ixs.Idxs[0:interceptIx], ixs.NextLevel)
-	t2 := b.newIndexNode(ixs.Idxs[interceptIx:b.length], ixs.NextLevel)
-	if ixs.Depth != b.depth {
-		t2 = b.newIndexNode(ixs.Idxs[interceptIx+1:b.length], ixs.NextLevel)
+	var n1, n2 []*IndexNode
+	if len(ixs.NextLevel) > 0 {
+		n1, n2 = make([]*IndexNode, b.length+1, b.length+1), make([]*IndexNode, b.length+1, b.length+1)
+		copy(n1, ixs.NextLevel[0:interceptIx])
+		copy(n2, ixs.NextLevel[interceptIx:])
 	}
+	dns1, dns2 := make([]*DataNode, b.length, b.length), make([]*DataNode, b.length, b.length)
+	copy(dns1, ixs.Idxs[0:interceptIx])
+	if len(ixs.NextLevel) > 0 {
+		copy(dns2, ixs.Idxs[interceptIx+1:])
+	} else {
+		copy(dns2, ixs.Idxs[interceptIx:])
+	}
+	t1 := b.newIndexNode(dns1, n1)
+	t2 := b.newIndexNode(dns2, n2)
+
 	b.riseNode(dn, ixs.Father, t1, t2)
 }
 
-func (b *BTree) Search(index int) *interface{} {
+func (b *BTree) Search(index int) interface{} {
 	idxn, ix := b.search(index, 0, b.root)
 	if ix == -1 {
 		return nil
@@ -121,7 +137,7 @@ func (b *BTree) search(index, depth int, n *IndexNode) (*IndexNode, int) {
 	for i, dn := range idxs {
 		//当遍历到最后一个非空的时候，就开始到下一层
 		if dn == nil {
-			if n.NextLevel[i] != nil {
+			if len(n.NextLevel) > 0 && n.NextLevel[i] != nil {
 				return b.search(index, depth, n.NextLevel[i])
 			}
 			if depth != b.depth {
@@ -130,7 +146,7 @@ func (b *BTree) search(index, depth int, n *IndexNode) (*IndexNode, int) {
 			return n, i - 1
 		}
 		if i == maxIx && dn.Idx < index {
-			if n.NextLevel[i+1] != nil {
+			if len(n.NextLevel) > 0 && n.NextLevel[i+1] != nil {
 				return b.search(index, depth, n.NextLevel[i+1])
 			}
 			if depth != b.depth {

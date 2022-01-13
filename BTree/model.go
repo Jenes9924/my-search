@@ -15,10 +15,10 @@ func (b *BTree) newIndexNode(idxs []*DataNode, nextLevel []*IndexNode) *IndexNod
 
 type DataNode struct {
 	Idx  int
-	Data *interface{}
+	Data interface{}
 	Next *DataNode
 }
 
-func (b *BTree) newDataNode(idx int, data *interface{}) *DataNode {
+func (b *BTree) newDataNode(idx int, data interface{}) *DataNode {
 	return &DataNode{Idx: idx, Data: data}
 }

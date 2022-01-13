@@ -2,14 +2,14 @@ package skip_list
 
 import (
 	"fmt"
-	"math/rand"
+	"my-search/util"
 	"testing"
 	"time"
 )
 
 func TestSkipList(t *testing.T) {
 	fmt.Printf("random start time is %s\n", time.Now().Format("2006-01-02 15:04:05"))
-	randomNumberArray := generateRandomNumber(1, 10000000000, 6224000)
+	randomNumberArray := util.GenerateRandomNumber(1, 10000000000, 6224000)
 	//randomNumberArray := generateRandomNumber(1, 10000000000, 4000)
 	skl := NewSkipList(32)
 	starTime := time.Now()
@@ -37,29 +37,6 @@ func TestSkipList(t *testing.T) {
 		}
 	}
 	fmt.Println("end")
-}
-
-//生成count个[start,end)结束的不重复的随机数
-func generateRandomNumber(start int, end int, count int) []int {
-	//范围检查
-	if end < start || (end-start) < count {
-		return nil
-	}
-	//存放结果的slice
-	nums := make([]int, 0)
-	//随机数生成器，加入时间戳保证每次生成的随机数不一样
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	m := map[int]string{}
-	for len(nums) < count {
-		//生成随机数
-		num := r.Intn((end - start)) + start
-		tl := len(m)
-		m[num] = ""
-		if (len(m) - tl) != 0 {
-			nums = append(nums, num)
-		}
-	}
-	return nums
 }
 
 func TestRandomLevel(t *testing.T) {
