@@ -48,6 +48,35 @@ func (b *BTree) insert(node *DataNode, ixs *IndexNode, ix int) {
 
 }
 
+func (b *BTree) riseNode(node *DataNode, father *IndexNode, t1, t2 *IndexNode) {
+	ix := 0
+	if father == nil {
+		b.root = b.NewIndexNode(nil, 1)
+		b.root.Idxs = append(b.root.Idxs, node)
+		b.root.NextLevel[ix] = t1
+		b.root.NextLevel[ix+1] = t2
+		b.depth++
+		return
+	}
+	// 获取父节点插入位置
+	tmp := father.Idxs
+	for i, v := range tmp {
+		if v.Idx <= node.Idx {
+			ix = i
+		}
+	}
+	// 中间插入 node，然后重建索引
+	it, it2 := tmp[0:ix+1], tmp[ix+1:len(tmp)]
+	t := append(it, node)
+	t = append(t, it2...)
+	copy(tmp[ix+2:], tmp[ix+1:])
+	tmp[ix+1] = node
+	// 中间插入 分裂的 t2
+
+	b.rebuildIndex(father)
+
+}
+
 // 无需整体构建，只需要局部重建索引，一直冒泡到 root 节点
 //func (b *BTree) rebuild(ixs *IndexNode) {
 //	b.rebuildIndex(ixs)
@@ -57,25 +86,17 @@ func (b *BTree) rebuildIndex(ixs *IndexNode) {
 	if ixs == nil || len(ixs.Idxs) < b.length {
 		return
 	}
-	interceptIx := b.length / 2
-	if b.length%2 == 1 {
-		interceptIx++
-	}
+	interceptIx := (b.length / 2) + 1
+	//插入父节点的 dataNode
 	dn := ixs.Idxs[interceptIx]
-	// 获取父节点插入位置
-	tmp := ixs.Father.Idxs
-	ix := 0
-	for i, v := range tmp {
-		if v.Idx <= dn.Idx {
-			ix = i
-		}
-	}
-	// 分裂 以及 删除
-	//t1 := b.newIndexNode(ixs.Idxs[0:2],ixs.NextLevel())
-	if ixs.Depth != b.depth {
 
+	// 当前 indexNode 分裂 以及 是否需要 删除
+	t1 := b.newIndexNode(ixs.Idxs[0:interceptIx], ixs.NextLevel)
+	t2 := b.newIndexNode(ixs.Idxs[interceptIx:b.length], ixs.NextLevel)
+	if ixs.Depth != b.depth {
+		t2 = b.newIndexNode(ixs.Idxs[interceptIx+1:b.length], ixs.NextLevel)
 	}
-	b.insert(dn, ixs.Father, ix)
+	b.riseNode(dn, ixs.Father, t1, t2)
 }
 
 func (b *BTree) Search(index int) *interface{} {
@@ -133,7 +154,7 @@ func (b *BTree) search(index, depth int, n *IndexNode) (*IndexNode, int) {
 func (b *BTree) NewIndexNode(father *IndexNode, depth int) *IndexNode {
 	return &IndexNode{
 		Idxs:      make([]*DataNode, b.length, b.length),
-		NextLevel: make([]*IndexNode, b.length, b.length),
+		NextLevel: make([]*IndexNode, b.length+1, b.length+1),
 		Father:    father,
 		Depth:     depth,
 	}
