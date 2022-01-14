@@ -48,6 +48,9 @@ func (b *BTree) insert(node *DataNode, ixs *IndexNode, ix int) {
 		return
 	}
 	// 插入 node，然后重建索引
+	if ix < (b.length - 2) {
+		copy(ixs.Idxs[ix+2:], ixs.Idxs[ix+1:])
+	}
 	ixs.Idxs[ix+1] = node
 	b.rebuildIndex(ixs)
 }
@@ -88,23 +91,23 @@ func (b *BTree) riseNode(node *DataNode, father *IndexNode, t1, t2 *IndexNode) {
 //}
 
 func (b *BTree) rebuildIndex(ixs *IndexNode) {
-	if ixs == nil || len(ixs.Idxs) < b.length {
+	if ixs == nil || ixs.Idxs[b.length-1] == nil {
 		return
 	}
-	interceptIx := (b.length / 2) + 1
+	interceptIx := b.length / 2
 	//插入父节点的 dataNode
 	dn := ixs.Idxs[interceptIx]
 
 	// 当前 indexNode 分裂 以及 是否需要 删除
 	var n1, n2 []*IndexNode
-	if len(ixs.NextLevel) > 0 {
-		n1, n2 = make([]*IndexNode, b.length+1, b.length+1), make([]*IndexNode, b.length+1, b.length+1)
-		copy(n1, ixs.NextLevel[0:interceptIx])
-		copy(n2, ixs.NextLevel[interceptIx:])
-	}
+	//if ixs.NextLevel[0] != nil {
+	n1, n2 = make([]*IndexNode, b.length+1, b.length+1), make([]*IndexNode, b.length+1, b.length+1)
+	copy(n1, ixs.NextLevel[0:interceptIx])
+	copy(n2, ixs.NextLevel[interceptIx:])
+	//}
 	dns1, dns2 := make([]*DataNode, b.length, b.length), make([]*DataNode, b.length, b.length)
 	copy(dns1, ixs.Idxs[0:interceptIx])
-	if len(ixs.NextLevel) > 0 {
+	if ixs.NextLevel[0] != nil {
 		copy(dns2, ixs.Idxs[interceptIx+1:])
 	} else {
 		copy(dns2, ixs.Idxs[interceptIx:])
@@ -132,12 +135,12 @@ func (b *BTree) search(index, depth int, n *IndexNode) (*IndexNode, int) {
 		return nil, -1
 	}
 	idxs := n.Idxs
-	maxIx := len(idxs) - 1
+	maxIx := b.length - 1
 	depth++
 	for i, dn := range idxs {
 		//当遍历到最后一个非空的时候，就开始到下一层
 		if dn == nil {
-			if len(n.NextLevel) > 0 && n.NextLevel[i] != nil {
+			if n.NextLevel[i] != nil {
 				return b.search(index, depth, n.NextLevel[i])
 			}
 			if depth != b.depth {
@@ -146,7 +149,7 @@ func (b *BTree) search(index, depth int, n *IndexNode) (*IndexNode, int) {
 			return n, i - 1
 		}
 		if i == maxIx && dn.Idx < index {
-			if len(n.NextLevel) > 0 && n.NextLevel[i+1] != nil {
+			if n.NextLevel[i+1] != nil {
 				return b.search(index, depth, n.NextLevel[i+1])
 			}
 			if depth != b.depth {
