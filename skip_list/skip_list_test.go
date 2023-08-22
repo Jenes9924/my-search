@@ -69,3 +69,34 @@ func TestSlice(t *testing.T) {
 	}
 	fmt.Println(5726623061 - res)
 }
+
+func TestQuestion(t *testing.T) {
+	var a = [5]int{1, 2, 3, 4, 5}
+	var r [5]int
+	var c []int
+
+	for i, v := range a {
+		r[i] = v
+		c = append(c, 1)
+	}
+	fmt.Println("r = ", r)
+	fmt.Println("a = ", a)
+}
+
+func TestQuestion2(t *testing.T) {
+	fmt.Println(f(3))
+}
+func f(n int) (r int) {
+	defer func() {
+		r += n
+		recover()
+	}()
+
+	var f func()
+
+	defer f()
+	f = func() {
+		r += 2
+	}
+	return n + 1
+}
