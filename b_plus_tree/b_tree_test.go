@@ -308,3 +308,25 @@ func TestBTree_Delete(t *testing.T) {
 		fmt.Println("Key 10 not found")
 	}
 }
+func TestBTree_Delete2(t *testing.T) {
+	bpt := NewBPlusTree(3)
+	bpt.Insert(10, "Value 10")
+	bpt.Insert(20, "Value 20")
+	bpt.Insert(5, "Value 5")
+	bpt.Insert(15, "Value 15")
+	bpt.Insert(25, "Value 25")
+	bpt.Insert(3, "Value 3")
+	bpt.Insert(7, "Value 7")
+	bpt.Insert(12, "Value 12")
+	bpt.Insert(17, "Value 17")
+	bpt.Insert(22, "Value 22")
+	bpt.Insert(27, "Value 27")
+	bpt.Insert(2, "Value 2")
+	bpt.Insert(4, "Value 4")
+	bpt.Insert(6, "Value 6")
+	bpt.Insert(9, "Value 9")
+	bpt.Delete(15)
+	bpt.Delete(17)
+	bpt.Delete(6)
+	fmt.Printf("end")
+}

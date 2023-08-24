@@ -465,6 +465,7 @@ func (b *BTree) borrowDataNode(ixnd, src *IndexNode, ix int, isLeft bool) *DataN
 	var moveDn *DataNode
 	if isLeft {
 		moveDn = src.DataNodes[len(src.DataNodes)-1]
+		ixDataNode := ixnd.Father.DataNodes[ix-1]
 		var newDns []*DataNode
 		for i, dataNode := range src.DataNodes {
 			if i != len(src.DataNodes)-1 {
@@ -472,8 +473,20 @@ func (b *BTree) borrowDataNode(ixnd, src *IndexNode, ix int, isLeft bool) *DataN
 			}
 		}
 		src.DataNodes = newDns
-		ixnd.DataNodes = append([]*DataNode{moveDn}, ixnd.DataNodes...)
 		ixnd.Father.DataNodes[ix-1] = moveDn
+		if len(ixnd.NextLevel) == 0 {
+			ixnd.DataNodes = append([]*DataNode{moveDn}, ixnd.DataNodes...)
+		} else {
+			ixnd.DataNodes = append([]*DataNode{ixDataNode}, ixnd.DataNodes...)
+			ixnd.NextLevel = append([]*IndexNode{src.NextLevel[len(src.NextLevel)-1]}, ixnd.NextLevel...)
+			var newIxNds []*IndexNode
+			for i, ixn := range src.NextLevel {
+				if i != len(src.NextLevel)-1 {
+					newIxNds = append(newIxNds, ixn)
+				}
+			}
+			src.NextLevel = newIxNds
+		}
 	} else {
 		moveDn = src.DataNodes[0]
 		indexDn := src.DataNodes[1]
