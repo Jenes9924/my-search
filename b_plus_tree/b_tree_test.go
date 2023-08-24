@@ -252,3 +252,59 @@ func complexBPlusTreeTest() {
 		fmt.Println("Key 10 not found")
 	}
 }
+
+func TestBTree_Delete(t *testing.T) {
+	bpt := NewBPlusTree(5)
+
+	// 插入键值对
+	bpt.Insert(100, "Value 10")
+	bpt.Insert(200, "Value 20")
+	bpt.Insert(300, "Value 5")
+	bpt.Insert(400, "Value 15")
+	bpt.Insert(500, "Value 25")
+	bpt.Insert(600, "Value 3")
+	bpt.Insert(700, "Value 7")
+	bpt.Insert(800, "Value 12")
+	bpt.Insert(900, "Value 17")
+	bpt.Insert(550, "Value 22")
+	bpt.Insert(650, "Value 27")
+	bpt.Insert(680, "Value 2")
+	bpt.Insert(750, "Value 4")
+	bpt.Insert(820, "Value 6")
+	//bpt.Insert(9, "Value 9")
+
+	// 查找键值对
+	value, found := bpt.Search(100)
+	if found {
+		fmt.Println("Key 10 found:", value)
+	} else {
+		fmt.Println("Key 10 not found")
+	}
+
+	value, found = bpt.Search(550)
+	if found {
+		fmt.Println("Key 25 found:", value)
+	} else {
+		fmt.Println("Key 25 not found")
+	}
+
+	value, found = bpt.Search(820)
+	if found {
+		fmt.Println("Key 8 found:", value)
+	} else {
+		fmt.Println("Key 8 not found")
+	}
+
+	// 删除键值对
+	bpt.Delete(680)
+	bpt.Delete(700)
+	bpt.Delete(650)
+	//bpt.Delete(700)
+
+	value, found = bpt.Search(10)
+	if found {
+		fmt.Println("Key 10 found:", value)
+	} else {
+		fmt.Println("Key 10 not found")
+	}
+}

@@ -28,7 +28,7 @@ func (t *Table) SetTree(tree *b_plus_tree.BTree) {
 }
 
 func (t *Table) Insert(data interface{}) {
-	t.tree.Insert(data)
+	//t.tree.Insert(data)
 }
 
 func (t *Table) Select(condition string) interface{} {

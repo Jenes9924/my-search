@@ -1,7 +1,5 @@
 package b_plus_tree
 
-import "fmt"
-
 type BTree struct {
 	length   int          `json:"length"`
 	depth    int          `json:"depth"`
@@ -82,7 +80,7 @@ func (b *BTree) insert(dataNd *DataNode, ixnd *IndexNode, ix int) {
 			nt.Prev = dataNd
 		}
 	}
-	fmt.Println("")
+	//fmt.Println("")
 
 	// 索引节点的插入
 	//length := len(ixnd.DataNodes)
@@ -321,7 +319,7 @@ func (b *BTree) IsNil(n Node) bool {
 
 func (b *BTree) Delete(index int) bool {
 
-	return true
+	return b.delete(index)
 }
 
 // 删除需要同步更改索引，所以不能单一搜索底部的索引node,还需要把途中所有符合的索引node都包含出来
@@ -340,13 +338,22 @@ func (b *BTree) delete(index int) bool {
 		nd.Next.Prev = nd.Prev
 	}
 
-	// 修改索引
-
-	b.deleteRaiseNode(index, ixnd)
-	return false
-}
-func (b *BTree) deleteRaiseNode(index int, ixnd *IndexNode) {
-
+	// 从索引中删除
+	if ixnd.DataNodes[0].Idx == index {
+		var tmp *DataNode
+		if len(ixnd.DataNodes) > 1 {
+			tmp = ixnd.DataNodes[1]
+		} else {
+			// 这种情况只会出现在 maxIndex = 3 的时候,此时需要判断删除的node处于左边还是右边，如果是左边就用链表下一个节点替代
+			// 判断是否处于最边缘
+			if ixnd == ixnd.Father.NextLevel[len(ixnd.Father.NextLevel)-1] {
+				tmp = nil
+			} else {
+				tmp = nd.Next
+			}
+		}
+		b.deleteFromIndex(index, ixnd.Father, tmp)
+	}
 	var dns []*DataNode
 	for _, dn := range ixnd.DataNodes {
 		if dn.Idx == index {
@@ -356,60 +363,143 @@ func (b *BTree) deleteRaiseNode(index int, ixnd *IndexNode) {
 	}
 	ixnd.DataNodes = dns
 
+	b.buildIndex(ixnd)
+	return false
+}
+
+func (b *BTree) buildIndex(ixnd *IndexNode) {
+	if len(ixnd.DataNodes) >= b.maxIndex/2 {
+		return
+	}
 	if ixnd.Father == nil {
+		if len(ixnd.DataNodes) == 0 && len(ixnd.NextLevel) == 1 {
+			b.Root = ixnd.NextLevel[0]
+		}
 		return
 	}
+	// 统一向前借调，前面节点不足的时候则向后借
+	// 实在无法借调，便会采取合并策略
 
-	if len(dns) >= b.maxIndex/2 {
-		b.deleteRaiseNode(index, ixnd.Father)
-		return
+	left, right, ix := b.getLeftAndRightIndexNode(ixnd)
+
+	// 从左边借调
+	if left != nil && len(left.DataNodes) > (b.maxIndex/2) {
+		b.borrowDataNode(ixnd, left, ix, true)
+	} else if right != nil && len(right.DataNodes) > (b.maxIndex/2) {
+		b.borrowDataNode(ixnd, right, ix, false)
+	} else {
+		// 左右都无法借调的时候，只有合并
+		if left != nil {
+			b.mergeIndexNode(left, ixnd, ix-1)
+		} else if right != nil {
+			b.mergeIndexNode(ixnd, right, ix)
+		} else {
+			// todo 未预料的情况
+		}
 	}
-	// 先向 father 借调
-	// 统一向后借调，没有则向前借
-	// pixn 和 nixn 的数量一样多的时候，优先向前借
+	b.buildIndex(ixnd.Father)
 
+}
+
+func (b *BTree) mergeIndexNode(left, right *IndexNode, ix int) {
+	var dns []*DataNode
+	for i, dataNode := range right.Father.DataNodes {
+		if ix != i {
+			dns = append(dns, dataNode)
+		}
+	}
+	ixDataNode := right.Father.DataNodes[ix]
+	right.Father.DataNodes = dns
+	var ixns []*IndexNode
+	for i, ixn := range right.Father.NextLevel {
+		if ix+1 != i && ix != i {
+			ixns = append(ixns, ixn)
+		}
+		if ix == i {
+			if len(left.NextLevel) == 0 {
+				left.DataNodes = append(left.DataNodes, right.DataNodes...)
+			} else {
+				left.DataNodes = append(left.DataNodes, ixDataNode)
+				left.DataNodes = append(left.DataNodes, right.DataNodes...)
+				left.NextLevel = append(left.NextLevel, right.NextLevel...)
+			}
+			ixns = append(ixns, left)
+		}
+	}
+	right.Father.NextLevel = ixns
+
+}
+
+// 从 father 节点获取当前节点的前后节点
+func (b *BTree) getLeftAndRightIndexNode(ixnd *IndexNode) (left, right *IndexNode, ix int) {
 	ft := ixnd.Father
-	ftIndex := -1
-	for i, v := range ft.DataNodes {
-		if v.Idx > index {
-			ftIndex = i
+	ix = -1
+	if ft == nil {
+		return nil, nil, ix
+	}
+	for i, ixn := range ft.NextLevel {
+		if ixn == ixnd {
+			ix = i
 			break
 		}
 	}
-	// 说明需要向前借，后面没有节点，father也没有可以借调的
-	if ftIndex == -1 {
-		// todo 向前借先不实现
-		pixn := ft.NextLevel[len(ft.DataNodes)-1]
-		// 判断是否需要合并
-		if len(pixn.DataNodes)-1 < b.maxIndex/2 {
-
-		}
-	} else {
-		nixn := ft.NextLevel[ftIndex+1]
-		// 先判断是否需要合并
-		if len(nixn.DataNodes)-1 < b.maxIndex/2 {
-			// 直接合并，不需要先借过来再判断是否合并
-
-		}
-
-		// 先从father 那边借过去
-		dns = append(dns, ft.DataNodes[ftIndex])
-		// 在从另一边剔除
-
-		var nixnDns []*DataNode
-		// 尽量不用 slice
-		for _, v := range nixn.DataNodes {
-			if v.Idx == ft.DataNodes[ftIndex].Idx {
-				continue
-			}
-			nixnDns = append(nixnDns, v)
-		}
-		nixn.DataNodes = nixnDns
-		// 合并
-		if len(nixnDns) < b.maxIndex/2 {
-
-		}
-
+	if ix == -1 {
+		return nil, nil, ix
 	}
 
+	if ix+1 == len(ft.NextLevel) {
+		right = nil
+	} else {
+		right = ft.NextLevel[ix+1]
+	}
+	if ix == 0 {
+		left = nil
+	} else {
+		left = ft.NextLevel[ix-1]
+	}
+	return left, right, ix
+}
+
+// 从左边或者右边借调,返回借调的datanode
+func (b *BTree) borrowDataNode(ixnd, src *IndexNode, ix int, isLeft bool) *DataNode {
+	var moveDn *DataNode
+	if isLeft {
+		moveDn = src.DataNodes[len(src.DataNodes)-1]
+		var newDns []*DataNode
+		for i, dataNode := range src.DataNodes {
+			if i != len(src.DataNodes)-1 {
+				newDns = append(newDns, dataNode)
+			}
+		}
+		src.DataNodes = newDns
+		ixnd.DataNodes = append([]*DataNode{moveDn}, ixnd.DataNodes...)
+		ixnd.Father.DataNodes[ix-1] = moveDn
+	} else {
+		moveDn = src.DataNodes[0]
+		indexDn := src.DataNodes[1]
+		var newDns []*DataNode
+		for i, dataNode := range src.DataNodes {
+			if i != 0 {
+				newDns = append(newDns, dataNode)
+			}
+		}
+		src.DataNodes = newDns
+		ixnd.DataNodes = append(ixnd.DataNodes, moveDn)
+		ixnd.Father.DataNodes[ix] = indexDn
+	}
+	return moveDn
+}
+
+// 从上层的索引中删除数据
+func (b *BTree) deleteFromIndex(index int, ixn *IndexNode, target *DataNode) bool {
+	if ixn == nil {
+		return false
+	}
+	for i, dataNode := range ixn.DataNodes {
+		if dataNode.Idx == index {
+			ixn.DataNodes[i] = target
+			return true
+		}
+	}
+	return b.deleteFromIndex(index, ixn.Father, target)
 }
