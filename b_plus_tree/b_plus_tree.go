@@ -1,6 +1,6 @@
 package b_plus_tree
 
-type BTree struct {
+type BPlusTree struct {
 	length   int          `json:"length"`
 	depth    int          `json:"depth"`
 	maxIndex int          `json:"max_index"`
@@ -19,11 +19,11 @@ type Node interface {
 
 type Integer = int
 
-func NewBPlusTree(length int) *BTree {
+func NewBPlusTree(length int) *BPlusTree {
 	if length < 3 {
 		length = 3
 	}
-	return &BTree{
+	return &BPlusTree{
 		depth:    0,
 		maxIndex: length,
 		Root:     nil,
@@ -32,7 +32,7 @@ func NewBPlusTree(length int) *BTree {
 }
 
 // todo 插入数据需要计算高度
-func (b *BTree) Insert(id int, data interface{}) {
+func (b *BPlusTree) Insert(id int, data interface{}) {
 	// 原本是向在 B+ 树中产生自增ID,但是后来发现不可行，毕竟索引树可能有多棵
 	//idx := b.maxIndex + 1
 	datanode := b.newDataNode(id, data)
@@ -46,7 +46,7 @@ func (b *BTree) Insert(id int, data interface{}) {
 *
 node: 新增的叶子节点
 */
-func (b *BTree) insert(dataNd *DataNode, ixnd *IndexNode, ix int) {
+func (b *BPlusTree) insert(dataNd *DataNode, ixnd *IndexNode, ix int) {
 	if ixnd == nil {
 		b.Root = b.NewIndexNode(nil, 1)
 		//b.Root.DataNodes[0] = dataNd
@@ -107,7 +107,7 @@ func (b *BTree) insert(dataNd *DataNode, ixnd *IndexNode, ix int) {
 	b.rebuildIndex(ixnd)
 }
 
-func (b *BTree) riseNode(nd *DataNode, father *IndexNode, leftIxn, rightIxn *IndexNode) {
+func (b *BPlusTree) riseNode(nd *DataNode, father *IndexNode, leftIxn, rightIxn *IndexNode) {
 	ix := 0
 	if father == nil {
 		f := b.newIndexNode([]*DataNode{nd}, []*IndexNode{leftIxn, rightIxn})
@@ -145,12 +145,12 @@ func (b *BTree) riseNode(nd *DataNode, father *IndexNode, leftIxn, rightIxn *Ind
 
 // 无需整体构建，只需要局部重建索引，一直逐级上升修改，冒泡到 Root 节点
 //
-//	func (b *BTree) rebuild(ixs *IndexNode) {
+//	func (b *BPlusTree) rebuild(ixs *IndexNode) {
 //		b.rebuildIndex(ixs)
 //	}
 //
 // 分裂步骤
-func (b *BTree) rebuildIndex(ixn *IndexNode) {
+func (b *BPlusTree) rebuildIndex(ixn *IndexNode) {
 	if len(ixn.DataNodes) < b.maxIndex {
 		return
 	}
@@ -184,7 +184,7 @@ func (b *BTree) rebuildIndex(ixn *IndexNode) {
 
 }
 
-func (b *BTree) Search(index int) (interface{}, bool) {
+func (b *BPlusTree) Search(index int) (interface{}, bool) {
 	idxn, ix := b.search(index)
 	if ix == -1 {
 		return nil, false
@@ -199,7 +199,7 @@ func (b *BTree) Search(index int) (interface{}, bool) {
 	return dn.Data, true
 }
 
-//func (b *BTree) recursiveSearch(index, depth int, n *IndexNode) (*IndexNode, int) {
+//func (b *BPlusTree) recursiveSearch(index, depth int, n *IndexNode) (*IndexNode, int) {
 //	if n == nil {
 //		return nil, -1
 //	}
@@ -239,13 +239,13 @@ func (b *BTree) Search(index int) (interface{}, bool) {
 //	return n, maxIx
 //}
 
-func (b *BTree) search(index int) (*IndexNode, int) {
+func (b *BPlusTree) search(index int) (*IndexNode, int) {
 	idxn, ix := b.recursiveSearch(index, b.Root)
 	return idxn, ix
 }
 
 // 递归搜索
-func (b *BTree) recursiveSearch(index int, n *IndexNode) (*IndexNode, int) {
+func (b *BPlusTree) recursiveSearch(index int, n *IndexNode) (*IndexNode, int) {
 
 	if n == nil {
 		return nil, -1
@@ -271,7 +271,7 @@ func (b *BTree) recursiveSearch(index int, n *IndexNode) (*IndexNode, int) {
 // 返回与id最相近地树节点
 // 索引节点不断向下查找
 // 返回负数的时候表示不存在相同的值
-func (b *BTree) get(index int, nd *IndexNode) (*IndexNode, int) {
+func (b *BPlusTree) get(index int, nd *IndexNode) (*IndexNode, int) {
 	if nd == nil {
 		return nil, -2
 	}
@@ -299,7 +299,7 @@ func (b *BTree) get(index int, nd *IndexNode) (*IndexNode, int) {
 	}
 }
 
-func (b *BTree) NewIndexNode(father *IndexNode, depth int) *IndexNode {
+func (b *BPlusTree) NewIndexNode(father *IndexNode, depth int) *IndexNode {
 	return &IndexNode{
 		//DataNodes: make([]*DataNode, b.length, b.length),
 		DataNodes: []*DataNode{},
@@ -310,20 +310,20 @@ func (b *BTree) NewIndexNode(father *IndexNode, depth int) *IndexNode {
 	}
 }
 
-func (b *BTree) IsNil(n Node) bool {
+func (b *BPlusTree) IsNil(n Node) bool {
 	if n == nil {
 		return true
 	}
 	return false
 }
 
-func (b *BTree) Delete(index int) bool {
+func (b *BPlusTree) Delete(index int) bool {
 
 	return b.delete(index)
 }
 
 // 删除需要同步更改索引，所以不能单一搜索底部的索引node,还需要把途中所有符合的索引node都包含出来
-func (b *BTree) delete(index int) bool {
+func (b *BPlusTree) delete(index int) bool {
 	ixnd, ix := b.get(index, b.Root)
 	// 判断是否存在
 	if ix < 0 || ixnd.DataNodes[ix].Idx != index {
@@ -367,7 +367,7 @@ func (b *BTree) delete(index int) bool {
 	return false
 }
 
-func (b *BTree) buildIndex(ixnd *IndexNode) {
+func (b *BPlusTree) buildIndex(ixnd *IndexNode) {
 	if len(ixnd.DataNodes) >= b.maxIndex/2 {
 		return
 	}
@@ -401,7 +401,7 @@ func (b *BTree) buildIndex(ixnd *IndexNode) {
 
 }
 
-func (b *BTree) mergeIndexNode(left, right *IndexNode, ix int) {
+func (b *BPlusTree) mergeIndexNode(left, right *IndexNode, ix int) {
 	var dns []*DataNode
 	for i, dataNode := range right.Father.DataNodes {
 		if ix != i {
@@ -431,7 +431,7 @@ func (b *BTree) mergeIndexNode(left, right *IndexNode, ix int) {
 }
 
 // 从 father 节点获取当前节点的前后节点
-func (b *BTree) getLeftAndRightIndexNode(ixnd *IndexNode) (left, right *IndexNode, ix int) {
+func (b *BPlusTree) getLeftAndRightIndexNode(ixnd *IndexNode) (left, right *IndexNode, ix int) {
 	ft := ixnd.Father
 	ix = -1
 	if ft == nil {
@@ -461,7 +461,7 @@ func (b *BTree) getLeftAndRightIndexNode(ixnd *IndexNode) (left, right *IndexNod
 }
 
 // 从左边或者右边借调,返回借调的datanode
-func (b *BTree) borrowDataNode(ixnd, src *IndexNode, ix int, isLeft bool) *DataNode {
+func (b *BPlusTree) borrowDataNode(ixnd, src *IndexNode, ix int, isLeft bool) *DataNode {
 	var moveDn *DataNode
 	if isLeft {
 		moveDn = src.DataNodes[len(src.DataNodes)-1]
@@ -504,7 +504,7 @@ func (b *BTree) borrowDataNode(ixnd, src *IndexNode, ix int, isLeft bool) *DataN
 }
 
 // 从上层的索引中删除数据
-func (b *BTree) deleteFromIndex(index int, ixn *IndexNode, target *DataNode) bool {
+func (b *BPlusTree) deleteFromIndex(index int, ixn *IndexNode, target *DataNode) bool {
 	if ixn == nil {
 		return false
 	}

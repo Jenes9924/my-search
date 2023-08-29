@@ -49,7 +49,7 @@ func (ixn *IndexNode) ToString() string {
 	return string(bs)
 }
 
-func (b *BTree) newIndexNode(idxs []*DataNode, nextLevel []*IndexNode) *IndexNode {
+func (b *BPlusTree) newIndexNode(idxs []*DataNode, nextLevel []*IndexNode) *IndexNode {
 	t := &IndexNode{DataNodes: idxs, NextLevel: nextLevel}
 	if nextLevel != nil || nextLevel[0] != nil {
 		for _, node := range nextLevel {
@@ -69,6 +69,6 @@ type DataNode struct {
 	Prev *DataNode   `json:"-"`
 }
 
-func (b *BTree) newDataNode(idx int, data interface{}) *DataNode {
+func (b *BPlusTree) newDataNode(idx int, data interface{}) *DataNode {
 	return &DataNode{Idx: idx, Data: data}
 }

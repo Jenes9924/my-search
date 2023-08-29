@@ -4,7 +4,7 @@ import "my-search/b_plus_tree"
 
 type Table struct {
 	name string
-	tree *b_plus_tree.BTree
+	tree *b_plus_tree.BPlusTree
 }
 
 func NewTable(name string) *Table {
@@ -19,11 +19,11 @@ func (t *Table) SetName(name string) {
 	t.name = name
 }
 
-func (t *Table) Tree() *b_plus_tree.BTree {
+func (t *Table) Tree() *b_plus_tree.BPlusTree {
 	return t.tree
 }
 
-func (t *Table) SetTree(tree *b_plus_tree.BTree) {
+func (t *Table) SetTree(tree *b_plus_tree.BPlusTree) {
 	t.tree = tree
 }
 
